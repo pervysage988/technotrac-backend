@@ -1,3 +1,6 @@
+import os
+import uvicorn
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -65,3 +68,7 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={"detail": "Internal Server Error"},
     )
+
+if __name__ == "__main__":
+    port = int(os.getenv("PORT", 8000))  # Render sets PORT=10000
+    uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=False)

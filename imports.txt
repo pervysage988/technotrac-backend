@@ -1,0 +1,306 @@
+        from app.core.logging import logger
+        from twilio.rest import Client
+from . import equipment
+from .booking import Booking
+from .equipment import Equipment
+from .misc import Misc
+from .rating import Rating
+from .settings import settings
+from .user import User
+from abc import ABC, abstractmethod
+from alembic import context
+from alembic import op
+from app.api import auth
+from app.api import auth as auth_router
+from app.api.routes import media
+from app.api.routes import router as api_router
+from app.api.routes.admin import router as admin_router
+from app.api.routes.availability import router as availability_router
+from app.api.routes.booking import router as booking_router
+from app.api.routes.equipment import router as equipment_router
+from app.api.routes.payment import router as payment_router
+from app.api.routes.ratings import router as ratings_router
+from app.core.authz import (
+from app.core.authz import require_admin  # ✅ centralized
+from app.core.authz import require_owner, enforce_equipment_ownership
+from app.core.config import settings
+from app.core.logging import logger
+from app.core.logging import logger, mask_phone
+from app.core.logging import mask_phone, logger
+from app.core.rate_limit import check_rate_limit
+from app.core.redis import set_value, get_value, delete_value
+from app.core.security import create_access_token
+from app.core.security import get_current_user
+from app.core.security import require_role  # fixed import (utils.jwt → core.security)
+from app.db import base  # ensures all models are registered
+from app.db import models  # noqa
+from app.db.base import Base  # imports all models
+from app.db.base_class import Base
+from app.db.models.audit_log import AuditLog
+from app.db.models.audit_log import AuditLog   # ✅ correct import
+from app.db.models.availability import Availability
+from app.db.models.booking import Booking
+from app.db.models.booking import Booking, BookingStatus
+from app.db.models.equipment import Equipment
+from app.db.models.equipment import Equipment  # ✅ needed for owner_id
+from app.db.models.equipment import Equipment, EquipmentStatus
+from app.db.models.misc import Misc, Admin
+from app.db.models.otp_code import OtpCode
+from app.db.models.payment import Payment
+from app.db.models.payment import Payment, PaymentStatus
+from app.db.models.rating import Rating
+from app.db.models.user import OwnerProfile, KycStatus
+from app.db.models.user import User
+from app.db.models.user import User, UserRole
+from app.db.models.user import User, UserRole, FarmerProfile, OwnerProfile, KycStatus
+from app.db.models.user import UserRole, User
+from app.db.session import AsyncSessionLocal
+from app.db.session import engine
+from app.db.session import get_session
+from app.schemas.audit_log import AuditLogRead
+from app.schemas.availability import AvailabilityCreate, AvailabilityOut
+from app.schemas.booking import BookingCreate, BookingOut
+from app.schemas.equipment import EquipmentCreate, EquipmentOut
+from app.schemas.equipment import EquipmentOut
+from app.schemas.media import PresignedURLResponse
+from app.schemas.payment import PaymentIntentCreate, PaymentIntentOut
+from app.schemas.rating import RatingCreate, RatingOut
+from app.schemas.user import OwnerProfileRead
+from app.schemas.user import UserRead, FarmerProfileRead, OwnerProfileRead
+from app.services.media import create_presigned_url
+from app.services.otp import send_otp, verify_otp
+from app.utils.jwt import create_jwt_token, get_current_user
+from app.utils.jwt import require_role
+from app.utils.phone import validate_phone_e164
+from botocore.exceptions import ClientError
+from datetime import datetime
+from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from enum import Enum
+from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Depends
+from fastapi import Depends
+from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, status
+from fastapi import FastAPI, Request
+from fastapi import HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.security import OAuth2PasswordBearer
+from jose import jwt, JWTError
+from jose import jwt, JWTError   # use python-jose for consistency
+from logging.config import fileConfig
+from math import ceil
+from passlib.hash import bcrypt
+from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, conint
+from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, Field
+from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy import (
+from sqlalchemy import Column, DateTime, ForeignKey, Index
+from sqlalchemy import Column, Enum, ForeignKey, TIMESTAMP, func, String
+from sqlalchemy import Column, ForeignKey
+from sqlalchemy import Column, String, DateTime, ForeignKey
+from sqlalchemy import Column, String, DateTime, SmallInteger, func, Index
+from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, JSON, func
+from sqlalchemy import engine_from_config, pool
+from sqlalchemy import func
+from sqlalchemy import select
+from sqlalchemy import select, and_
+from sqlalchemy.dialects import postgresql
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.future import select
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import relationship
+from sqlalchemy.orm import sessionmaker
+from twilio.rest import Client  # ✅ Twilio SDK
+from typing import Any
+from typing import Iterable
+from typing import List
+from typing import List, Union
+from typing import Literal
+from typing import Optional
+from typing import Sequence, Union
+from uuid import UUID
+from uuid import uuid4
+import asyncio
+import boto3
+import enum
+import json
+import logging
+import os
+import phonenumbers
+import random
+import re
+import redis
+import redis.asyncio as redis
+import requests
+import sqlalchemy as sa
+import sys
+import time
+import uuid
+import uuid 
+            "notes"
+        from app.core.logging import logger
+        from twilio.rest import Client
+    """Decode JWT (with rotation) and load the User from DB."""
+    """Return the currently logged in user (from JWT)."""
+    """Verify OTP from Redis and limit attempts."""
+    # Load user from DB
+    jwt_secret_keys
+    logger.info(f"OTP requested for {mask_phone(phone)} from IP={client_ip}")
+    raise HTTPException(status_code=401, detail="Invalid or expired token") from last_err
+# --- Database URL from .env via settings ---
+# Engine uses DATABASE_URL from .env
+Binary file app/__pycache__/auth.cpython-313.pyc matches
+Binary file app/api/__pycache__/auth.cpython-311.pyc matches
+Binary file app/api/__pycache__/auth.cpython-313.pyc matches
+Binary file app/core/__pycache__/security.cpython-311.pyc matches
+Binary file app/core/__pycache__/security.cpython-313.pyc matches
+Binary file app/schemas/__pycache__/booking.cpython-311.pyc matches
+Binary file app/schemas/__pycache__/booking.cpython-313.pyc matches
+Binary file app/services/__pycache__/otp.cpython-311.pyc matches
+Binary file app/services/__pycache__/otp.cpython-313.pyc matches
+from . import equipment
+from .booking import Booking
+from .equipment import Equipment
+from .misc import Misc
+from .rating import Rating
+from .settings import settings
+from .user import User
+from abc import ABC, abstractmethod
+from alembic import context
+from alembic import op
+from app.api import auth
+from app.api import auth as auth_router
+from app.api.routes import media
+from app.api.routes import router as api_router
+from app.api.routes.admin import router as admin_router
+from app.api.routes.availability import router as availability_router
+from app.api.routes.booking import router as booking_router
+from app.api.routes.equipment import router as equipment_router
+from app.api.routes.payment import router as payment_router
+from app.api.routes.ratings import router as ratings_router
+from app.core.authz import (
+from app.core.authz import require_admin  # ✅ centralized
+from app.core.authz import require_owner, enforce_equipment_ownership
+from app.core.config import settings
+from app.core.logging import logger
+from app.core.logging import logger, mask_phone
+from app.core.logging import mask_phone, logger
+from app.core.rate_limit import check_rate_limit
+from app.core.redis import set_value, get_value, delete_value
+from app.core.security import create_access_token
+from app.core.security import get_current_user
+from app.core.security import require_role  # fixed import (utils.jwt → core.security)
+from app.db import base  # ensures all models are registered
+from app.db import models  # noqa
+from app.db.base import Base  # imports all models
+from app.db.base_class import Base
+from app.db.models.audit_log import AuditLog
+from app.db.models.audit_log import AuditLog   # ✅ correct import
+from app.db.models.availability import Availability
+from app.db.models.booking import Booking
+from app.db.models.booking import Booking, BookingStatus
+from app.db.models.equipment import Equipment
+from app.db.models.equipment import Equipment  # ✅ needed for owner_id
+from app.db.models.equipment import Equipment, EquipmentStatus
+from app.db.models.misc import Misc, Admin
+from app.db.models.otp_code import OtpCode
+from app.db.models.payment import Payment
+from app.db.models.payment import Payment, PaymentStatus
+from app.db.models.rating import Rating
+from app.db.models.user import OwnerProfile, KycStatus
+from app.db.models.user import User
+from app.db.models.user import User, UserRole
+from app.db.models.user import User, UserRole, FarmerProfile, OwnerProfile, KycStatus
+from app.db.models.user import UserRole, User
+from app.db.session import AsyncSessionLocal
+from app.db.session import engine
+from app.db.session import get_session
+from app.schemas.audit_log import AuditLogRead
+from app.schemas.availability import AvailabilityCreate, AvailabilityOut
+from app.schemas.booking import BookingCreate, BookingOut
+from app.schemas.equipment import EquipmentCreate, EquipmentOut
+from app.schemas.equipment import EquipmentOut
+from app.schemas.media import PresignedURLResponse
+from app.schemas.payment import PaymentIntentCreate, PaymentIntentOut
+from app.schemas.rating import RatingCreate, RatingOut
+from app.schemas.user import OwnerProfileRead
+from app.schemas.user import UserRead, FarmerProfileRead, OwnerProfileRead
+from app.services.media import create_presigned_url
+from app.services.otp import send_otp, verify_otp
+from app.utils.jwt import create_jwt_token, get_current_user
+from app.utils.jwt import require_role
+from app.utils.phone import validate_phone_e164
+from botocore.exceptions import ClientError
+from datetime import datetime
+from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from enum import Enum
+from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Depends
+from fastapi import Depends
+from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, status
+from fastapi import FastAPI, Request
+from fastapi import HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.security import OAuth2PasswordBearer
+from jose import jwt, JWTError
+from jose import jwt, JWTError   # use python-jose for consistency
+from logging.config import fileConfig
+from math import ceil
+from passlib.hash import bcrypt
+from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, conint
+from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, Field
+from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy import (
+from sqlalchemy import Column, DateTime, ForeignKey, Index
+from sqlalchemy import Column, Enum, ForeignKey, TIMESTAMP, func, String
+from sqlalchemy import Column, ForeignKey
+from sqlalchemy import Column, String, DateTime, ForeignKey
+from sqlalchemy import Column, String, DateTime, SmallInteger, func, Index
+from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, JSON, func
+from sqlalchemy import engine_from_config, pool
+from sqlalchemy import func
+from sqlalchemy import select
+from sqlalchemy import select, and_
+from sqlalchemy.dialects import postgresql
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.future import select
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import relationship
+from sqlalchemy.orm import sessionmaker
+from twilio.rest import Client  # ✅ Twilio SDK
+from typing import Any
+from typing import Iterable
+from typing import List
+from typing import List, Union
+from typing import Literal
+from typing import Optional
+from typing import Sequence, Union
+from uuid import UUID
+from uuid import uuid4
