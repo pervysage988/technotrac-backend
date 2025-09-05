@@ -4,7 +4,7 @@ from typing import Iterable
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import jwt, JWTError
+from jose import JWTError, jwt
 from sqlalchemy import select
 
 from app.core.config import settings

@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import select
-from jose import jwt, JWTError   # use python-jose for consistency
+from jose import JWTError, jwt   # use python-jose for consistency
 from app.db.session import AsyncSessionLocal
 from app.db.models.user import User
 from app.core.config import settings
