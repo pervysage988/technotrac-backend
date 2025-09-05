@@ -1,0 +1,40 @@
+services:
+  api:
+    build: .
+    env_file:
+      - .env
+    environment:
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET}
+    depends_on:
+      - db
+      - redis
+    command: ./wait-for-it.sh db 5432 -- uvicorn app.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+
+  db:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: technotrac
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"   # 👈 Optional: expose for local tools (pgAdmin, DBeaver)
+
+  redis:
+    image: redis:7
+    restart: always
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"   # 👈 Optional: expose for local debugging
+
+volumes:
+  postgres_data:
+  redis_data:
