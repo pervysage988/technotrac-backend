@@ -1,6 +1,3 @@
-import os
-import uvicorn
-
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,35 +8,45 @@ from app.core.logging import logger
 # Routers
 from app.api import auth
 from app.api.routes import media
-from app.api.routes import router as api_router
 from app.api.routes.equipment import router as equipment_router
 from app.api.routes.booking import router as booking_router
 from app.api.routes.availability import router as availability_router
 from app.api.routes.admin import router as admin_router
 from app.api.routes.payment import router as payment_router
 from app.api.routes.ratings import router as ratings_router
-from app.api import auth as auth_router
 
 from app.db.base_class import Base
 from app.db import base  # ensures all models are registered
 from app.db.session import engine
-
 
 # --------------------------------------------------
 # Create FastAPI app
 # --------------------------------------------------
 app = FastAPI(title=settings.app_name, debug=settings.debug)
 
+# --------------------------------------------------
 # ✅ CORS setup
+# --------------------------------------------------
+# If settings.cors_origins is not set, we can override it here:
+cors_origins = [
+    "https://technotrac.web.app",          # Firebase Hosting
+    "https://technotrac.firebaseapp.com",  # Firebase alternate domain
+    "http://localhost:5173",               # local frontend
+    "https://6000-firebase-studio-1756462080949.cluster-ejd22kqny5htuv5dfowoyipt52.cloudworkstations.dev",  # Firebase Studio dev
+]
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# --------------------------------------------------
 # ✅ Register routers
+# --------------------------------------------------
 app.include_router(auth.router, prefix="/api", tags=["auth"])
 app.include_router(equipment_router, prefix="/api/equipment", tags=["equipment"])
 app.include_router(booking_router, prefix="/api/bookings", tags=["bookings"])
@@ -50,13 +57,19 @@ app.include_router(ratings_router, prefix="/api/ratings", tags=["ratings"])
 app.include_router(media.router, prefix="/api/media", tags=["media"])
 
 
+# ----------------------------
+# Test route to check backend connection
+# ----------------------------
+@app.get("/api/test")
+def test_api():
+    return {"message": "CORS is working!"}
+
 # --------------------------------------------------
 # Root endpoint
 # --------------------------------------------------
 @app.get("/")
 def root():
     return {"message": "Welcome to TechnoTrac API"}
-
 
 # --------------------------------------------------
 # Global exception handler
@@ -68,7 +81,3 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={"detail": "Internal Server Error"},
     )
-
-if __name__ == "__main__":
-    port = int(os.getenv("PORT", 8000))  # Render sets PORT=10000
-    uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=False)
