@@ -19,13 +19,13 @@ app.add_middleware(
 )
 
 # Include routers with proper prefixes
-app.include_router(auth.router, prefix="/api/auth")
-app.include_router(equipment.router, prefix="/api/equipment")
-app.include_router(bookings.router, prefix="/api/bookings")
-app.include_router(availability.router, prefix="/api/availability")
-app.include_router(admin.router, prefix="/api/admin")
-app.include_router(payments.router, prefix="/api/payments")
-app.include_router(ratings.router, prefix="/api/ratings")
+app.include_router(auth.router, prefix="/api/v1")
+app.include_router(equipment.router, prefix="/api/v1")
+app.include_router(bookings.router, prefix="/api/v1")
+app.include_router(availability.router, prefix="/api/v1")
+app.include_router(admin.router, prefix="/api/v1")
+app.include_router(payments.router, prefix="/api/v1")
+app.include_router(ratings.router, prefix="/api/v1")
 
 @app.on_event("startup")
 def run_migrations():
