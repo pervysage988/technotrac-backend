@@ -11,7 +11,7 @@ from app.schemas.equipment import EquipmentCreate, EquipmentOut
 from app.core.authz import require_owner, enforce_equipment_ownership
 from app.db.models.user import User
 
-router = APIRouter(prefix="/equipment", tags=["equipment"])
+router = APIRouter(prefix="", tags=["equipment"])
 
 
 @router.post("/", response_model=EquipmentOut)
