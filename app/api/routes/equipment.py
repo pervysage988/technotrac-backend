@@ -20,7 +20,9 @@ async def create_equipment(
     session: AsyncSession = Depends(get_session),
     user: User = Depends(require_owner),
 ):
-    """OWNER creates a new equipment listing (draft by default)."""
+    """
+    OWNER creates a new equipment listing (draft by default).
+    """
     eq = Equipment(
         owner_id=user.id,
         **payload.model_dump(),
@@ -36,11 +38,14 @@ async def create_equipment(
 async def list_equipment(
     session: AsyncSession = Depends(get_session),
 ):
-    """List all approved equipment (for borrowers)."""
+    """
+    List all approved equipment for borrowers.
+    """
     result = await session.execute(
         select(Equipment).where(Equipment.status == EquipmentStatus.APPROVED)
     )
-    return result.scalars().all()
+    equipments = result.scalars().all()
+    return equipments
 
 
 @router.get("/{equipment_id}", response_model=EquipmentOut)
@@ -48,6 +53,9 @@ async def get_equipment(
     equipment_id: uuid.UUID,
     session: AsyncSession = Depends(get_session),
 ):
+    """
+    Get a single equipment by ID.
+    """
     eq = await session.get(Equipment, equipment_id)
     if not eq:
         raise HTTPException(status_code=404, detail="Equipment not found")
@@ -61,11 +69,13 @@ async def update_equipment(
     session: AsyncSession = Depends(get_session),
     eq: Equipment = Depends(enforce_equipment_ownership),
 ):
-    """OWNER updates only their own equipment listing."""
+    """
+    OWNER updates only their own equipment listing.
+    If an approved listing is edited, its status goes back to pending review.
+    """
     for field, value in payload.model_dump().items():
         setattr(eq, field, value)
 
-    # If an approved listing is edited, push back to review
     if eq.status == EquipmentStatus.APPROVED:
         eq.status = EquipmentStatus.PENDING_REVIEW
 
@@ -80,7 +90,10 @@ async def delete_equipment(
     session: AsyncSession = Depends(get_session),
     eq: Equipment = Depends(enforce_equipment_ownership),
 ):
-    """OWNER can delete only their own equipment listing."""
+    """
+    OWNER can delete only their own equipment listing.
+    Approved equipment cannot be deleted directly; contact admin.
+    """
     if eq.status == EquipmentStatus.APPROVED:
         raise HTTPException(
             status_code=403,
