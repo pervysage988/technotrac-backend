@@ -25,16 +25,15 @@ from app.db.session import engine
 app = FastAPI(title=settings.app_name, debug=settings.debug)
 
 # --------------------------------------------------
-# ✅ CORS setup
+# ✅ CORS setup for local, Firebase, and Vercel
 # --------------------------------------------------
-# If settings.cors_origins is not set, we can override it here:
 cors_origins = [
-    "https://technotrac.web.app",          # Firebase Hosting
-    "https://technotrac.firebaseapp.com",  # Firebase alternate domain
-    "http://localhost:5173",               # local frontend
-    "https://6000-firebase-studio-1756462080949.cluster-ejd22kqny5htuv5dfowoyipt52.cloudworkstations.dev",  # Firebase Studio dev
+    "https://technotrac.web.app",                      # Firebase Hosting
+    "https://technotrac.firebaseapp.com",              # Firebase alternate domain
+    "http://localhost:3000",                           # local frontend dev
+    "http://localhost:5173",                           # Vite dev server
+    "https://technotrac-frontend.vercel.app",          # Vercel production frontend
 ]
-
 
 app.add_middleware(
     CORSMiddleware,
@@ -55,7 +54,6 @@ app.include_router(admin_router, prefix="/api/admin", tags=["admin"])
 app.include_router(payment_router, prefix="/api/payments", tags=["payments"])
 app.include_router(ratings_router, prefix="/api/ratings", tags=["ratings"])
 app.include_router(media.router, prefix="/api/media", tags=["media"])
-
 
 # ----------------------------
 # Test route to check backend connection
