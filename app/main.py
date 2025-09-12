@@ -19,20 +19,31 @@ from app.db.base_class import Base
 from app.db import base  # ensures all models are registered
 from app.db.session import engine
 
+import os
+
 # --------------------------------------------------
 # Create FastAPI app
 # --------------------------------------------------
 app = FastAPI(title=settings.app_name, debug=settings.debug)
 
 # --------------------------------------------------
+# ✅ Debug: Check if REDIS_URL is loaded from env
+# --------------------------------------------------
+redis_url = os.getenv("REDIS_URL")
+if redis_url:
+    logger.info(f"✅ REDIS_URL loaded: {redis_url[:30]}... (masked)")
+else:
+    logger.error("❌ REDIS_URL not found in environment!")
+
+# --------------------------------------------------
 # ✅ CORS setup for local, Firebase, and Vercel
 # --------------------------------------------------
 cors_origins = [
-    "https://technotrac.web.app",                      # Firebase Hosting
-    "https://technotrac.firebaseapp.com",              # Firebase alternate domain
-    "http://localhost:3000",                           # local frontend dev
-    "http://localhost:5173",                           # Vite dev server
-    "https://technotrac-frontend.vercel.app",          # Vercel production frontend
+    "https://technotrac.web.app",             # Firebase Hosting
+    "https://technotrac.firebaseapp.com",     # Firebase alternate domain
+    "http://localhost:3000",                  # local frontend dev
+    "http://localhost:5173",                  # Vite dev server
+    "https://technotrac-frontend.vercel.app", # Vercel production frontend
 ]
 
 app.add_middleware(
