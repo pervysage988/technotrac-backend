@@ -20,6 +20,9 @@ from app.db import base  # ensures all models are registered
 from app.db.session import engine
 
 import os
+import asyncio
+from alembic import command
+from alembic.config import Config
 
 # --------------------------------------------------
 # Create FastAPI app
@@ -33,7 +36,7 @@ redis_url = os.getenv("REDIS_URL")
 if redis_url:
     logger.info(f"✅ REDIS_URL loaded: {redis_url[:30]}... (masked)")
 else:
-    logger.error("❌ REDIS_URL not found in environment!")
+    logger.warning("⚠️ REDIS_URL not found in environment!")
 
 # --------------------------------------------------
 # ✅ CORS setup for local, Firebase, and Vercel
@@ -53,6 +56,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# --------------------------------------------------
+# ✅ Auto-run Alembic migrations on startup
+# --------------------------------------------------
+@app.on_event("startup")
+async def run_migrations():
+    try:
+        logger.info("🚀 Running Alembic migrations on startup...")
+        alembic_cfg = Config("alembic.ini")
+        command.upgrade(alembic_cfg, "head")
+        logger.info("✅ Alembic migrations applied successfully.")
+    except Exception as e:
+        logger.error(f"❌ Failed to run migrations: {e}")
 
 # --------------------------------------------------
 # ✅ Register routers
