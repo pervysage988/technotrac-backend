@@ -15,12 +15,11 @@ from app.api.routes.admin import router as admin_router
 from app.api.routes.payment import router as payment_router
 from app.api.routes.ratings import router as ratings_router
 
-from app.db.base_class import Base
 from app.db import base  # ensures all models are registered
-from app.db.session import engine
 
 import os
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from alembic import command
 from alembic.config import Config
 from pathlib import Path
@@ -63,13 +62,20 @@ app.add_middleware(
 # --------------------------------------------------
 @app.on_event("startup")
 async def run_migrations():
-    try:
-        BASE_DIR = Path(__file__).resolve().parent.parent
-        alembic_cfg = Config(str(BASE_DIR / "alembic.ini"))
-        command.upgrade(alembic_cfg, "head")
-        logger.info("✅ Alembic migrations applied successfully.")
-    except Exception as e:
-        logger.error(f"❌ Failed to run migrations: {e}")
+    def _upgrade():
+        try:
+            BASE_DIR = Path(__file__).resolve().parent.parent
+            alembic_cfg = Config(str(BASE_DIR / "alembic.ini"))
+            # Force DB URL for Render
+            alembic_cfg.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+            command.upgrade(alembic_cfg, "head")
+            logger.info("✅ Alembic migrations applied successfully.")
+        except Exception as e:
+            logger.error(f"❌ Failed to run migrations: {e}")
+
+    loop = asyncio.get_event_loop()
+    # Run migrations in background thread so startup isn’t blocked
+    await loop.run_in_executor(ThreadPoolExecutor(), _upgrade)
 
 # --------------------------------------------------
 # ✅ Register routers

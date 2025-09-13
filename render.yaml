@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: technotrac-backend
+    env: python
+    region: oregon                # change if you want Singapore/Frankfurt
+    plan: free
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port 10000
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: technotrac-db
+          property: connectionString
+      - key: REDIS_URL
+        value: ""   # optional for now
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: ENVIRONMENT
+        value: "production"
+
+databases:
+  - name: technotrac-db
+    plan: free
+    region: oregon
