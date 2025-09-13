@@ -67,7 +67,7 @@ async def run_migrations():
             BASE_DIR = Path(__file__).resolve().parent.parent
             alembic_cfg = Config(str(BASE_DIR / "alembic.ini"))
             # Force DB URL for Render
-            alembic_cfg.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+            alembic_cfg.set_main_option("sqlalchemy.url", settings.database_url)
             command.upgrade(alembic_cfg, "head")
             logger.info("✅ Alembic migrations applied successfully.")
         except Exception as e:
