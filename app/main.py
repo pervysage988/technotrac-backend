@@ -23,6 +23,7 @@ import os
 import asyncio
 from alembic import command
 from alembic.config import Config
+from pathlib import Path
 
 # --------------------------------------------------
 # Create FastAPI app
@@ -63,8 +64,8 @@ app.add_middleware(
 @app.on_event("startup")
 async def run_migrations():
     try:
-        logger.info("🚀 Running Alembic migrations on startup...")
-        alembic_cfg = Config("alembic.ini")
+        BASE_DIR = Path(__file__).resolve().parent.parent
+        alembic_cfg = Config(str(BASE_DIR / "alembic.ini"))
         command.upgrade(alembic_cfg, "head")
         logger.info("✅ Alembic migrations applied successfully.")
     except Exception as e:
