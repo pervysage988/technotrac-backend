@@ -33,18 +33,17 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    phone_e164 = Column(String, unique=True, index=True, nullable=False)
+    phone_e164 = Column(String, unique=True, nullable=False)  # ✅ unique, no duplicate index
     role = Column(Enum(UserRole, name="user_role_enum"), index=True, nullable=False)
     display_name = Column(String, nullable=True)
-    language = Column(String, nullable=True)  # e.g. "hi", "en", "mr"
+    language = Column(String, nullable=True)
     rating_avg = Column(Numeric(2, 1), default=0.0)
     rating_count = Column(Integer, default=0)
-    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
+    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
 
     # Relationships
     bookings = relationship("Booking", back_populates="renter", cascade="all, delete-orphan")
     availabilities = relationship("Availability", back_populates="owner", cascade="all, delete-orphan")
-    # inside User class
     audit_logs = relationship("AuditLog", back_populates="actor", cascade="all, delete-orphan")
 
     owner_profile = relationship(
@@ -54,7 +53,6 @@ class User(Base):
         "FarmerProfile", back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
 
-    # Ratings
     ratings_given = relationship(
         "Rating",
         back_populates="by_user",
@@ -72,26 +70,23 @@ class User(Base):
 class OwnerProfile(Base):
     __tablename__ = "owner_profiles"
 
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), primary_key=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     upi_id = Column(String, nullable=True)
-    kyc_status = Column(Enum(KycStatus), default=KycStatus.UNVERIFIED)
+    kyc_status = Column(Enum(KycStatus, name="kyc_status_enum"), default=KycStatus.UNVERIFIED)
 
-    # Relationship
     user = relationship("User", back_populates="owner_profile")
 
 
 class FarmerProfile(Base):
     __tablename__ = "farmer_profiles"
 
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), primary_key=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     village = Column(Text, nullable=True)
     pincode = Column(String, index=True)
 
-    # Relationship
     user = relationship("User", back_populates="farmer_profile")
 
 
-# Explicit indexes (if not covered by Column(index=True))
-Index("ix_users_phone_e164", User.phone_e164)
+# ✅ Explicit indexes (no duplicates)
 Index("ix_users_role", User.role)
 Index("ix_farmer_profiles_pincode", FarmerProfile.pincode)

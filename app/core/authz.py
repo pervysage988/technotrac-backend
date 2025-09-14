@@ -1,43 +1,11 @@
-# app/core/authz.py
-from fastapi import Depends, HTTPException, status
-from app.core.security import get_current_user
-from app.db.models.user import UserRole, User
+from fastapi import Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.security import get_current_user, require_owner
+from app.db.models.user import User, UserRole
 from app.db.models.equipment import Equipment
 from app.db.models.booking import Booking
-from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_session
 from uuid import UUID
-
-
-# -------- Role checks --------
-def require_owner(user: User = Depends(get_current_user)) -> User:
-    """Allow only OWNER role users."""
-    if user.role != UserRole.OWNER:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only equipment owners can perform this action",
-        )
-    return user
-
-
-def require_farmer(user: User = Depends(get_current_user)) -> User:
-    """Allow only FARMER role users."""
-    if user.role != UserRole.FARMER:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only farmers can perform this action",
-        )
-    return user
-
-
-def require_admin(user: User = Depends(get_current_user)) -> User:
-    """Allow only ADMIN role users."""
-    if user.role != UserRole.ADMIN:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can perform this action",
-        )
-    return user
 
 
 # -------- Ownership / Access checks --------
@@ -62,10 +30,16 @@ async def enforce_booking_access(
     session: AsyncSession = Depends(get_session),
     user: User = Depends(get_current_user),
 ) -> Booking:
-    """Allow FARMER (renter) or OWNER (equipment owner) to access booking."""
+    """
+    Allow FARMER (renter) or OWNER (equipment owner) to access booking.
+    Admins can also access.
+    """
     booking = await session.get(Booking, booking_id)
     if not booking:
         raise HTTPException(status_code=404, detail="Booking not found")
+
+    if user.role == UserRole.ADMIN:
+        return booking
 
     if user.role == UserRole.FARMER and booking.renter_id != user.id:
         raise HTTPException(status_code=403, detail="Not authorized")

@@ -14,5 +14,5 @@ class Admin(Base):
         primary_key=True
     )
 
-    # Relationship back to user
-    user = relationship("User", backref="admin_entry")
+    # Relationship back to user (one-to-one like)
+    user = relationship("User", backref="admin_entry", uselist=False)

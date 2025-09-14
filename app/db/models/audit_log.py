@@ -12,7 +12,7 @@ class AuditLog(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
-    # Who performed the action (linked to User, not Admin directly)
+    # Who performed the action (linked to User)
     actor_user_id = Column(
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="SET NULL"),

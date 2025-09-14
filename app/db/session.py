@@ -2,17 +2,17 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
 
-# Engine uses DATABASE_URL from .env
+# Engine uses DATABASE_URL from settings
 engine = create_async_engine(
     settings.database_url,
     future=True,
-    echo=True  # Debug: shows SQL in logs; turn off in production
+    echo=settings.debug,  # ✅ only log SQL when debug=True
 )
 
 AsyncSessionLocal = sessionmaker(
     bind=engine,
     class_=AsyncSession,
-    expire_on_commit=False
+    expire_on_commit=False,
 )
 
 

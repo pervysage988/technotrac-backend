@@ -1,7 +1,5 @@
 # app/core/security.py
 from datetime import datetime, timedelta, timezone
-from typing import Iterable
-
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
@@ -11,7 +9,7 @@ from app.core.config import settings
 from app.db.session import AsyncSessionLocal
 from app.db.models.user import User, UserRole
 
-# Use full path so Swagger "Authorize" works behind /api prefix
+# OAuth2 token URL (matches auth router)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/otp/verify")
 
 
@@ -25,19 +23,15 @@ def create_access_token(data: dict, expires_delta: int | None = None) -> str:
         minutes=expires_delta or settings.access_token_exp_minutes
     )
     to_encode.update({"exp": expire})
-    token = jwt.encode(
+    return jwt.encode(
         to_encode,
-        settings.primary_secret_key,  # only newest key used for signing
+        settings.primary_secret_key,
         algorithm=settings.jwt_algorithm,
     )
-    return token
 
 
 def _decode_with_rotation(token: str) -> dict:
-    """
-    Try decoding the token against all configured secrets (for key rotation).
-    Returns the payload on first success; raises 401 otherwise.
-    """
+    """Try decoding against all configured secrets (for key rotation)."""
     last_err: Exception | None = None
     for key in settings.all_secret_keys:
         try:
@@ -49,10 +43,10 @@ def _decode_with_rotation(token: str) -> dict:
 
 
 # -------------------------------
-# User dependencies (ORM user)
+# User dependencies
 # -------------------------------
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
-    """Decode JWT (with rotation) and load the User from DB."""
+    """Decode JWT and load the User from DB."""
     payload = _decode_with_rotation(token)
     user_id = payload.get("sub")
     if not user_id:
@@ -72,10 +66,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
 
 
 def require_role(*allowed_roles: UserRole):
-    """
-    Dependency factory: ensure the current user has one of the allowed roles.
-    Returns the ORM User.
-    """
+    """Factory: ensure the user has one of the allowed roles."""
     async def role_checker(user: User = Depends(get_current_user)) -> User:
         if allowed_roles and user.role not in allowed_roles:
             allowed_str = ", ".join(r.value for r in allowed_roles)
@@ -84,10 +75,10 @@ def require_role(*allowed_roles: UserRole):
                 detail=f"Only {allowed_str} allowed",
             )
         return user
-
     return role_checker
 
 
-# Convenience shortcuts
+# Convenience
 require_owner = require_role(UserRole.OWNER)
+require_farmer = require_role(UserRole.FARMER)
 require_admin = require_role(UserRole.ADMIN)

@@ -18,11 +18,13 @@ class Rating(Base):
         ForeignKey("bookings.id", ondelete="CASCADE"),
         unique=True,
         nullable=False,
+        index=True,
     )
     by_user_id = Column(
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
+        index=True,
     )
     for_user_id = Column(
         UUID(as_uuid=True),
@@ -33,7 +35,7 @@ class Rating(Base):
 
     stars = Column(SmallInteger, nullable=False)
     comment = Column(Text, nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     # Relationships
     booking = relationship("Booking", back_populates="rating")

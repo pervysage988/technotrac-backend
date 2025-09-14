@@ -1,13 +1,32 @@
-# app/core/rate_limit.py
-import time
+"""
+app/core/rate_limit.py
+
+Rate limiting via Redis.
+
+⚠️ NOTE:
+- If REDIS_URL is missing or Redis is unavailable, rate limiting is skipped
+  (fail-open) so OTP/auth flows are not blocked.
+"""
+
 import redis
 from fastapi import HTTPException
 from app.core.config import settings
+from app.core.logging import logger
 
 # -----------------------------
-# Redis Client (sync for now)
+# Redis Client (safe init)
 # -----------------------------
-redis_client = redis.StrictRedis.from_url(settings.redis_url, decode_responses=True)
+redis_client = None
+if settings.redis_url:
+    try:
+        redis_client = redis.StrictRedis.from_url(
+            settings.redis_url,
+            decode_responses=True
+        )
+    except Exception as e:
+        redis_client = None
+        logger.warning(f"⚠️ Failed to init Redis client for rate limiting: {e}")
+
 
 # -----------------------------
 # Rate limit helper
@@ -15,10 +34,16 @@ redis_client = redis.StrictRedis.from_url(settings.redis_url, decode_responses=T
 def check_rate_limit(key: str, limit: int = 5, window: int = 60) -> None:
     """
     Rate limit helper.
+
     - key: unique identifier (e.g., "otp:+919876543210" or "otp-ip:127.0.0.1")
     - limit: max allowed requests
     - window: time window in seconds
+
+    If Redis is unavailable, no rate limiting is enforced (fail-open).
     """
+    if not redis_client:
+        return  # skip rate limiting if Redis not configured
+
     try:
         # increment the counter
         current = redis_client.incr(key)
@@ -34,7 +59,5 @@ def check_rate_limit(key: str, limit: int = 5, window: int = 60) -> None:
             )
     except redis.RedisError as e:
         # If Redis is down, fail OPEN (no blocking auth flow)
-        # Log but don’t block the user
-        from app.core.logging import logger
         logger.error(f"Redis error in rate limiting: {e}")
         return

@@ -6,5 +6,6 @@ from app.db.models.booking import Booking
 from app.db.models.availability import Availability
 from app.db.models.payment import Payment
 from app.db.models.rating import Rating
-from app.db.models.misc import Misc, Admin
+from app.db.models.misc import Misc
+from app.db.models.admin import Admin
 from app.db.models.audit_log import AuditLog   # ✅ correct import

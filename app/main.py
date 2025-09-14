@@ -23,6 +23,7 @@ from concurrent.futures import ThreadPoolExecutor
 from alembic import command
 from alembic.config import Config
 from pathlib import Path
+import traceback
 
 # --------------------------------------------------
 # Create FastAPI app
@@ -71,7 +72,9 @@ async def run_migrations():
             command.upgrade(alembic_cfg, "head")
             logger.info("✅ Alembic migrations applied successfully.")
         except Exception as e:
-            logger.error(f"❌ Failed to run migrations: {e}")
+            logger.error("❌ Failed to run migrations.")
+            logger.error(f"Error: {e}")
+            logger.error(traceback.format_exc())
 
     loop = asyncio.get_event_loop()
     # Run migrations in background thread so startup isn’t blocked

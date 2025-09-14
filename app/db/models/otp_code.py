@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, DateTime, SmallInteger, func, Index
+from sqlalchemy import Column, String, DateTime, SmallInteger, func
 from sqlalchemy.dialects.postgresql import UUID
 from app.db.base_class import Base
 
@@ -13,10 +13,4 @@ class OtpCode(Base):
     expires_at = Column(DateTime(timezone=True), nullable=False)
     attempts = Column(SmallInteger, default=0)
 
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    # Explicit index for phone lookups
-    __table_args__ = (
-        Index("ix_otp_codes_phone_e164", "phone_e164"),
-    )
- 
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

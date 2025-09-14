@@ -9,7 +9,7 @@ from app.db.base_class import Base
 class Availability(Base):
     __tablename__ = "availabilities"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
     equipment_id = Column(
         UUID(as_uuid=True),
@@ -21,6 +21,7 @@ class Availability(Base):
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
+        index=True,
     )
 
     start_ts = Column(DateTime(timezone=True), nullable=False)
@@ -30,6 +31,7 @@ class Availability(Base):
     equipment = relationship("Equipment", back_populates="availabilities")
     owner = relationship("User", back_populates="availabilities")
 
+    # Keep any multi-column indexes you actually need; single-column indexes are handled by Column(index=True)
     __table_args__ = (
-        Index("ix_availability_equipment_id", "equipment_id"),
+        Index("ix_availability_start_end", "equipment_id", "start_ts", "end_ts"),
     )

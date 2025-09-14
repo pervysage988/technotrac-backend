@@ -1,4 +1,4 @@
-import uuid 
+import uuid
 import enum
 from sqlalchemy import (
     Column, Enum, Integer, ForeignKey, DateTime, func, Index
@@ -52,14 +52,14 @@ class Booking(Base):
     start_ts = Column(DateTime(timezone=True), nullable=False)
     end_ts = Column(DateTime(timezone=True), nullable=False)
 
-    status = Column(Enum(BookingStatus), default=BookingStatus.PENDING, index=True)
+    status = Column(Enum(BookingStatus, name="booking_status_enum"), default=BookingStatus.PENDING, index=True)
 
     price_total = Column(Integer, nullable=False, default=0)
     commission_fee = Column(Integer, nullable=False, default=0)
     owner_payout = Column(Integer, nullable=False, default=0)
 
-    payment_method = Column(Enum(PaymentMethod), nullable=True)
-    payment_status = Column(Enum(PaymentStatus), default=PaymentStatus.NONE)
+    payment_method = Column(Enum(PaymentMethod, name="booking_payment_method_enum"), nullable=True)
+    payment_status = Column(Enum(PaymentStatus, name="booking_payment_status_enum"), default=PaymentStatus.NONE)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -67,7 +67,7 @@ class Booking(Base):
     equipment = relationship("Equipment", back_populates="bookings")
     renter = relationship("User", back_populates="bookings")
     rating = relationship("Rating", back_populates="booking", uselist=False)
-    payment = relationship("Payment", back_populates="booking", uselist=False)  # 🔹 NEW
+    payment = relationship("Payment", back_populates="booking", uselist=False)
 
     __table_args__ = (
         Index("ix_booking_equipment", "equipment_id"),

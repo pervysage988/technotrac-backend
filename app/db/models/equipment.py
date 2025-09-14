@@ -1,4 +1,4 @@
-import uuid 
+import uuid
 import enum
 from sqlalchemy import (
     Column, String, Enum, Integer, ForeignKey, Boolean,
@@ -30,8 +30,8 @@ class Equipment(Base):
     __tablename__ = "equipment"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    owner_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
-    type = Column(Enum(EquipmentType), nullable=False, index=True)
+    owner_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    type = Column(Enum(EquipmentType, name="equipment_type_enum"), nullable=False, index=True)
     brand = Column(String, nullable=True)
     model = Column(String, nullable=True)
     daily_rate = Column(Integer, nullable=False)
@@ -39,10 +39,10 @@ class Equipment(Base):
     operator_included = Column(Boolean, default=False, index=True)
     lat = Column(Float, nullable=True)
     lon = Column(Float, nullable=True)
-    status = Column(Enum(EquipmentStatus), default=EquipmentStatus.DRAFT, nullable=False, index=True)
+    status = Column(Enum(EquipmentStatus, name="equipment_status_enum"), default=EquipmentStatus.DRAFT, nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    photos = relationship("EquipmentPhoto", back_populates="equipment")
+    photos = relationship("EquipmentPhoto", back_populates="equipment", cascade="all, delete-orphan")
     bookings = relationship("Booking", back_populates="equipment", cascade="all, delete-orphan")
     availabilities = relationship("Availability", back_populates="equipment", cascade="all, delete-orphan")
 
@@ -58,7 +58,7 @@ class EquipmentPhoto(Base):
     __tablename__ = "equipment_photos"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    equipment_id = Column(UUID(as_uuid=True), ForeignKey("equipment.id"), nullable=False, index=True)
+    equipment_id = Column(UUID(as_uuid=True), ForeignKey("equipment.id", ondelete="CASCADE"), nullable=False, index=True)
     url = Column(String, nullable=False)
     position = Column(SmallInteger, nullable=True)
 

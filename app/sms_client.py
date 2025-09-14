@@ -1,23 +1,44 @@
- 
 # app/sms_client.py
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import Any
 import requests
-from .settings import settings
+
+from app.core.logging import logger
+from app.core.config import settings
+
 
 class SMSClient(ABC):
+    """Abstract base for SMS clients."""
+
     @abstractmethod
     def send_sms(self, to_e164: str, message: str) -> None: ...
 
+
+# ----------------------------
+# Twilio SMS Client
+# ----------------------------
 class TwilioClient(SMSClient):
     def __init__(self, account_sid: str, auth_token: str, from_number: str):
-        from twilio.rest import Client
+        from twilio.rest import Client  # imported only if used
         self.client = Client(account_sid, auth_token)
         self.from_number = from_number
 
     def send_sms(self, to_e164: str, message: str) -> None:
-        self.client.messages.create(to=to_e164, from_=self.from_number, body=message)
+        try:
+            msg = self.client.messages.create(
+                to=to_e164, from_=self.from_number, body=message
+            )
+            logger.info(f"✅ Twilio SMS sent to {to_e164} (SID={msg.sid})")
+        except Exception as e:
+            logger.error(f"❌ Failed to send Twilio SMS to {to_e164}: {e}")
+            raise
 
+
+# ----------------------------
+# MSG91 SMS Client
+# ----------------------------
 class MSG91Client(SMSClient):
     def __init__(self, auth_key: str, sender_id: str, template_id: str | None = None):
         self.auth_key = auth_key
@@ -25,7 +46,7 @@ class MSG91Client(SMSClient):
         self.template_id = template_id
 
     def send_sms(self, to_e164: str, message: str) -> None:
-        mobile = to_e164.lstrip("+")
+        mobile = to_e164.lstrip("+")  # MSG91 requires numeric format only
         url = (
             "https://api.msg91.com/api/v5/flow/"
             if self.template_id
@@ -51,16 +72,40 @@ class MSG91Client(SMSClient):
                 "sms": [{"message": message, "to": [mobile]}],
             }
 
-        r = requests.post(url, json=payload, headers=headers, timeout=10)
-        r.raise_for_status()
+        try:
+            r = requests.post(url, json=payload, headers=headers, timeout=10)
+            r.raise_for_status()
+            logger.info(f"✅ MSG91 SMS sent to {mobile}")
+        except Exception as e:
+            logger.error(f"❌ Failed to send MSG91 SMS to {mobile}: {e}")
+            raise
 
+
+# ----------------------------
+# Factory
+# ----------------------------
 def get_sms_client() -> SMSClient:
+    """Factory: returns the configured SMS client."""
     if settings.SMS_PROVIDER == "twilio":
-        if not (settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN and settings.TWILIO_PHONE_NUMBER):
-            raise RuntimeError("Twilio config missing")
-        return TwilioClient(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN, settings.TWILIO_PHONE_NUMBER)
+        if not (
+            settings.TWILIO_ACCOUNT_SID
+            and settings.TWILIO_AUTH_TOKEN
+            and settings.TWILIO_PHONE_NUMBER
+        ):
+            raise RuntimeError("❌ Twilio config missing")
+        return TwilioClient(
+            settings.TWILIO_ACCOUNT_SID,
+            settings.TWILIO_AUTH_TOKEN,
+            settings.TWILIO_PHONE_NUMBER,
+        )
+
     elif settings.SMS_PROVIDER == "msg91":
         if not (settings.MSG91_AUTH_KEY and settings.MSG91_SENDER_ID):
-            raise RuntimeError("MSG91 config missing")
-        return MSG91Client(settings.MSG91_AUTH_KEY, settings.MSG91_SENDER_ID, settings.MSG91_TEMPLATE_ID)
-    raise RuntimeError("Unknown SMS_PROVIDER")
+            raise RuntimeError("❌ MSG91 config missing")
+        return MSG91Client(
+            settings.MSG91_AUTH_KEY,
+            settings.MSG91_SENDER_ID,
+            settings.MSG91_TEMPLATE_ID,
+        )
+
+    raise RuntimeError(f"❌ Unknown SMS_PROVIDER: {settings.SMS_PROVIDER}")
